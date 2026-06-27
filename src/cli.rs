@@ -17,6 +17,9 @@ pub enum Commands {
     /// Check Kubernetes cluster connectivity
      Health,
 
+    /// Get Kubernetes resources
+    Get(GetArgs),
+
     /// Explain whether traffic is allowed or denied
     Explain(ExplainArgs),
 
@@ -70,4 +73,22 @@ pub struct AuditArgs {
     /// Audit all namespaces
     #[arg(long)]
     pub all_namespaces: bool,
+}
+
+#[derive(Args)]
+pub struct GetArgs {
+    #[command(subcommand)]
+    pub resource: GetResource,
+}
+
+#[derive(Subcommand)]
+pub enum GetResource {
+    /// List Pods
+    Pods(PodArgs),
+}
+
+#[derive(Args)]
+pub struct PodArgs {
+    #[arg(short, long, default_value = "default")]
+    pub namespace: String,
 }
