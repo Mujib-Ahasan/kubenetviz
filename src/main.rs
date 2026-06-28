@@ -19,5 +19,6 @@ async fn main() -> Result<()> {
         Commands::Graph(args) => commands::graph::run(args),
         Commands::Audit(args) => commands::audit::run(args),
         Commands::Get(args) => commands::get::run(args).await,
+        
     }
 }

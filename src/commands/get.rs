@@ -13,6 +13,10 @@ pub async fn run(args: GetArgs) -> Result<()> {
         GetResource::Pods(pod_args) => {
             resources::pods::list(client, &pod_args.namespace).await?;
         }
+
+        GetResource::NetworkPolicy(policy_args) => {
+            resources::network_policies::list(client, &policy_args.namespace).await?;
+        }
     }
 
     Ok(())
