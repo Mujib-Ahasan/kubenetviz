@@ -85,7 +85,7 @@ pub struct GetArgs {
 pub enum GetResource {
     /// List Pods
     Pods(PodArgs),
-
+    
     /// List NetworkPolicies
     NetworkPolicy(NetworkPolicyArgs),
 }
@@ -98,6 +98,20 @@ pub struct PodArgs {
 
 #[derive(Args)]
 pub struct NetworkPolicyArgs {
+    #[arg(short, long, default_value = "default")]
+    pub namespace: String,
+}
+
+#[derive(Subcommand)]
+pub enum GetPloicies {
+    Policies {
+        #[arg(short, long, default_value = "default")]
+        namespace: String,
+    },
+}
+
+#[derive(Args)]
+pub struct Policies {
     #[arg(short, long, default_value = "default")]
     pub namespace: String,
 }

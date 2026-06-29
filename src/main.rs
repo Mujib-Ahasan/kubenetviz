@@ -2,6 +2,9 @@ mod cli;
 mod commands;
 mod kube_client;
 mod resources;
+mod selector;
+mod pod_resolver;
+mod policy_eval;
 
 use anyhow::Result;
 use clap::Parser;
@@ -14,11 +17,10 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Commands::Version => commands::version::run(),
-        Commands::Explain(args) => commands::explain::run(args),
+        Commands::Explain(args) => commands::explain::run(args).await,
         Commands:: Health => commands::health::run().await,
         Commands::Graph(args) => commands::graph::run(args),
         Commands::Audit(args) => commands::audit::run(args),
         Commands::Get(args) => commands::get::run(args).await,
-        
     }
 }
