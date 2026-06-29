@@ -1,4 +1,5 @@
 use k8s_openapi::api::networking::v1::NetworkPolicy;
+use crate::resources::namespaces::NamespaceInfo;
 
 use crate::{
     pod_resolver::PodInfo,
@@ -48,7 +49,10 @@ fn has_ingress_policy_type(policy: &NetworkPolicy) -> bool {
 pub fn is_ingress_allowed_by_pod_selector(
     from: &PodInfo,
     to: &PodInfo,
+    from_namespace: &NamespaceInfo,
     policies: &[NetworkPolicy],
+    port: Option<u16>,
+    protocol: &str,
 ) -> IngressDecision {
     let selecting_policies = ingress_policies_selecting_pod(to, policies);
 
@@ -74,6 +78,9 @@ pub fn is_ingress_allowed_by_pod_selector(
         };
 
         for rule in ingress_rules {
+             if !ports_allow(&rule.ports, port, protocol) {
+                continue;
+            }
             let Some(from_peers) = &rule.from else {
                 return IngressDecision {
                     allowed: true,
@@ -84,16 +91,24 @@ pub fn is_ingress_allowed_by_pod_selector(
             };
 
             for peer in from_peers {
-                if let Some(peer_pod_selector) = &peer.pod_selector {
-                    if matches_selector(peer_pod_selector, &from.labels) {
-                        return IngressDecision {
-                            allowed: true,
-                            reasons: vec![format!(
-                                "Policy {policy_name} allows source pod {}/{} because it matches a podSelector",
-                                from.namespace, from.name
-                            )],
-                        };
-                    }
+               let namespace_matches = match &peer.namespace_selector {
+                    Some(namespace_selector) => matches_selector(namespace_selector, &from_namespace.labels),
+                        None => true,
+                };
+
+                let pod_matches = match &peer.pod_selector {
+                    Some(peer_pod_selector) => matches_selector(peer_pod_selector, &from.labels),
+                        None => true,
+                };
+
+                if namespace_matches && pod_matches {
+                    return IngressDecision {
+                        allowed: true,
+                        reasons: vec![format!(
+                            "Policy {policy_name} allows source pod {}/{} because namespaceSelector/podSelector matched",
+                            from.namespace, from.name
+                        )],
+                    };
                 }
             }
         }
@@ -106,4 +121,46 @@ pub fn is_ingress_allowed_by_pod_selector(
             to.namespace, to.name, from.namespace, from.name
         )],
     }
+}
+
+fn ports_allow(
+    rule_ports: &Option<Vec<k8s_openapi::api::networking::v1::NetworkPolicyPort>>,
+    requested_port: Option<u16>,
+    requested_protocol: &str,
+) -> bool {
+    let Some(rule_ports) = rule_ports else {
+        return true;
+    };
+
+    if rule_ports.is_empty() {
+        return true;
+    }
+
+    for rule_port in rule_ports {
+        let protocol_matches = rule_port
+            .protocol
+            .as_deref()
+            .unwrap_or("TCP")
+            .eq_ignore_ascii_case(requested_protocol);
+
+        if !protocol_matches {
+            continue;
+        }
+
+        let Some(port) = &rule_port.port else {
+            return true;
+        };
+
+        let Some(requested_port) = requested_port else {
+            return true;
+        };
+
+        if let k8s_openapi::apimachinery::pkg::util::intstr::IntOrString::Int(policy_port) = port {
+            if *policy_port == requested_port as i32 {
+                return true;
+            }
+        }
+    }
+
+    false
 }

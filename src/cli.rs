@@ -44,6 +44,9 @@ pub struct ExplainArgs {
     #[arg(short, long, default_value = "default")]
     pub namespace: String,
 
+    #[arg(long)]
+    pub from_namespace: Option<String>,
+
     /// Destination port
     #[arg(long)]
     pub port: Option<u16>,

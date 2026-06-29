@@ -20,9 +20,17 @@ pub async fn run(args: ExplainArgs) -> Result<()> {
         .ok_or_else(|| anyhow::anyhow!("--to is required"))?;
 
     let client = kube_client::new_client().await?;
+    let from_namespace = args
+    .from_namespace
+    .as_deref()
+    .unwrap_or(&args.namespace);
+
+    let namespaces = resources::namespaces::fetch_all(client.clone()).await?;
+
+    let source_namespace =resources::namespaces::find_namespace(&namespaces, &from_namespace)?;
 
     let source_pods =
-        pod_resolver::resolve_pods(client.clone(), &args.namespace, from_selector).await?;
+        pod_resolver::resolve_pods(client.clone(), from_namespace, from_selector).await?;
 
     let destination_pods =
         pod_resolver::resolve_pods(client.clone(), &args.namespace, to_selector).await?;
@@ -47,7 +55,7 @@ pub async fn run(args: ExplainArgs) -> Result<()> {
     for from in &source_pods {
     for to in &destination_pods {
         let decision =
-            policy_eval::is_ingress_allowed_by_pod_selector(from, to, &policies);
+            policy_eval::is_ingress_allowed_by_pod_selector(from, to, source_namespace, &policies, args.port, &args.protocol);
 
         if decision.allowed {
             println!(
