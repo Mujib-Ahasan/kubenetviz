@@ -44,28 +44,28 @@ pub async fn run(args: ExplainArgs) -> Result<()> {
 
     println!();
 
-    for pod in &destination_pods {
-        let selecting_policies =
-            policy_eval::ingress_policies_selecting_pod(pod, &policies);
+    for from in &source_pods {
+    for to in &destination_pods {
+        let decision =
+            policy_eval::is_ingress_allowed_by_pod_selector(from, to, &policies);
 
-        if selecting_policies.is_empty() {
+        if decision.allowed {
             println!(
-                "{}/{} is not ingress-isolated by any NetworkPolicy",
-                pod.namespace, pod.name
+                "ALLOWED: {}/{} -> {}/{}",
+                from.namespace, from.name, to.namespace, to.name
             );
         } else {
             println!(
-                "{}/{} is ingress-isolated by:",
-                pod.namespace, pod.name
+                "DENIED: {}/{} -> {}/{}",
+                from.namespace, from.name, to.namespace, to.name
             );
+        }
 
-            for policy in selecting_policies {
-                let policy_name =
-                    policy.metadata.name.as_deref().unwrap_or("<unknown>");
-                println!("- {policy_name}");
-            }
+        for reason in decision.reasons {
+            println!("  - {reason}");
         }
     }
+}
 
     Ok(())
 }
