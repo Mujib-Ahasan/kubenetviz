@@ -1,5 +1,6 @@
 use k8s_openapi::api::networking::v1::NetworkPolicy;
 use crate::resources::namespaces::NamespaceInfo;
+use crate::cidr::ip_block_allows;
 
 use crate::{
     pod_resolver::PodInfo,
@@ -110,6 +111,22 @@ pub fn is_ingress_allowed_by_pod_selector(
                         )],
                     };
                 }
+
+                if let Some(ip_block) = &peer.ip_block {
+                    if let Some(source_ip) = &from.ip {
+                        let except = ip_block.except.clone().unwrap_or_default();
+
+                        if ip_block_allows(source_ip, &ip_block.cidr, &except).unwrap_or(false) {
+                            return IngressDecision {
+                                allowed: true,
+                                reasons: vec![format!(
+                                    "Policy {policy_name} allows source pod {}/{} because its IP {} matches ipBlock {}",
+                                    from.namespace, from.name, source_ip, ip_block.cidr
+                                )],
+                            };
+                        }
+                    }
+            }
             }
         }
     }

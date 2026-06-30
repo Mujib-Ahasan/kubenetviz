@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use anyhow::{bail, Result};
+use anyhow::{Result};
 use k8s_openapi::api::core::v1::Namespace;
 use kube::{
     api::{Api, ListParams},

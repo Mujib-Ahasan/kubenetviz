@@ -5,6 +5,7 @@ mod resources;
 mod selector;
 mod pod_resolver;
 mod policy_eval;
+mod cidr;
 
 use anyhow::Result;
 use clap::Parser;
