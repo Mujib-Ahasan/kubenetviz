@@ -15,6 +15,29 @@ pub struct PodInfo {
     pub ip: Option<String>,
 }
 
+/// Fetch all pods in a namespace (no label selector filter).
+pub async fn resolve_all_pods(
+    client: Client,
+    namespace: &str,
+) -> Result<Vec<PodInfo>> {
+    let pods: Api<Pod> = Api::namespaced(client, namespace);
+    let pod_list = pods.list(&ListParams::default()).await?;
+
+    Ok(pod_list
+        .into_iter()
+        .map(|pod| {
+            let name = pod.metadata.name.unwrap_or_default();
+            let namespace = pod
+                .metadata
+                .namespace
+                .unwrap_or_else(|| namespace.to_string());
+            let labels = pod.metadata.labels.unwrap_or_default();
+            let ip = pod.status.and_then(|status| status.pod_ip);
+            PodInfo { name, namespace, labels, ip }
+        })
+        .collect())
+}
+
 pub async fn resolve_pods(
     client: Client,
     namespace: &str,

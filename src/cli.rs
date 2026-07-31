@@ -17,9 +17,6 @@ pub enum Commands {
     /// Check Kubernetes cluster connectivity
      Health,
 
-    /// Get Kubernetes resources
-    Get(GetArgs),
-
     /// Explain whether traffic is allowed or denied
     Explain(ExplainArgs),
 
@@ -65,6 +62,10 @@ pub struct GraphArgs {
     /// Output file path
     #[arg(short, long)]
     pub output: Option<String>,
+
+    /// Include denied connections in the graph
+    #[arg(long)]
+    pub include_denied: bool,
 }
 
 #[derive(Args)]
@@ -77,45 +78,3 @@ pub struct AuditArgs {
     #[arg(long)]
     pub all_namespaces: bool,
 }
-
-#[derive(Args)]
-pub struct GetArgs {
-    #[command(subcommand)]
-    pub resource: GetResource,
-}
-
-#[derive(Subcommand)]
-pub enum GetResource {
-    /// List Pods
-    Pods(PodArgs),
-    
-    /// List NetworkPolicies
-    NetworkPolicy(NetworkPolicyArgs),
-}
-
-#[derive(Args)]
-pub struct PodArgs {
-    #[arg(short, long, default_value = "default")]
-    pub namespace: String,
-}
-
-#[derive(Args)]
-pub struct NetworkPolicyArgs {
-    #[arg(short, long, default_value = "default")]
-    pub namespace: String,
-}
-
-#[derive(Subcommand)]
-pub enum GetPloicies {
-    Policies {
-        #[arg(short, long, default_value = "default")]
-        namespace: String,
-    },
-}
-
-#[derive(Args)]
-pub struct Policies {
-    #[arg(short, long, default_value = "default")]
-    pub namespace: String,
-}
-

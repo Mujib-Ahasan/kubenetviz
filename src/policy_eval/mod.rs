@@ -5,13 +5,14 @@ mod connection;
 
 pub use connection::evaluate_connection;
 
-// Re-exported for external consumers and future commands (graph, audit)
 #[allow(unused_imports)]
 pub use peer::{policy_selects_pod, peer_matches_pod};
+pub use ingress::ingress_policies_selecting_pod;
 #[allow(unused_imports)]
-pub use ingress::{ingress_policies_selecting_pod, is_ingress_allowed_by_pod_selector};
+pub use ingress::is_ingress_allowed_by_pod_selector;
+pub use egress::egress_policies_selecting_pod;
 #[allow(unused_imports)]
-pub use egress::{egress_policies_selecting_pod, is_egress_allowed};
+pub use egress::is_egress_allowed;
 
 /// Result of evaluating one direction (ingress or egress) of network policy.
 #[derive(Debug)]
